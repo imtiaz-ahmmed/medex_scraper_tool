@@ -93,6 +93,8 @@ def scrape_brand_list(generic_url, generic_name, rows):
             # Expected: [Brand, Dosage, Strength, Company, PackSize+Price]
             
             dosage_form = col_data[1] if len(col_data) > 1 else "N/A"
+            strength = col_data[2] if len(col_data) > 2 else "N/A"
+            company = col_data[3] if len(col_data) > 3 else "N/A"
             
             # Pack Size & Price column (Last column usually)
             pack_price_text = col_data[-1] if col_data else ""
