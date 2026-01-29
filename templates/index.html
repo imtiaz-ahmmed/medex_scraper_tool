@@ -1,20 +1,69 @@
 <!doctype html>
 <html>
-  <head>
-    <title>MedEx Brand Scraper</title>
-    <link rel="stylesheet" href="/static/style.css" />
-  </head>
-  <body>
-    <div class="card">
-      <h1>💊 MedEx Brand Scraper</h1>
-      <p class="subtitle">Test Mode: First 10 Generics</p>
 
-      <button onclick="start()">▶ Start Scraping</button>
-      <button class="download" onclick="download()">⬇ Download Excel</button>
+<head>
+  <title>MedEx Advanced</title>
+  <link rel="stylesheet" href="/static/style.css?v=4" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
 
-      <div id="status" class="status">Status: Idle</div>
+<body>
+  <h1>MedEx Advanced</h1>
+
+  <div class="cards">
+    <div class="card" onclick="openModal('generics')">
+      <h3>Generic with Brand</h3>
+      <p>Download Brands by Generic</p>
     </div>
+    <div class="card" onclick="openModal('brands')">
+      <h3>Brands</h3>
+      <p>EN + BN Mapping</p>
+    </div>
+    <div class="card" onclick="openModal('companies')">
+      <h3>Companies</h3>
+      <p>Pharma Profiles</p>
+    </div>
+  </div>
 
-    <script src="/static/app.js"></script>
-  </body>
+  <!-- Scrape Modal -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-box">
+      <h3>Scrape Options</h3>
+
+      <div class="mode-select">
+        <label><input type="radio" name="scrapeMode" value="ALL" checked onchange="toggleMode()"> All Data</label>
+        <label><input type="radio" name="scrapeMode" value="ALPHA" onchange="toggleMode()"> Alphabetical</label>
+      </div>
+
+      <div id="alphabetContainer" class="hidden">
+        <div id="alphabetPad" class="dial-pad"></div>
+      </div>
+
+      <div class="limit-select">
+        <label> <input type="checkbox" id="limitToggle" /> Limit Count </label>
+        <input type="number" id="limitInput" style="display: none" placeholder="Max" />
+      </div>
+
+      <!-- Progress Section (Hidden initially) -->
+      <div id="progressSection" class="progress-container hidden">
+        <div class="progress-info">
+          <span id="progressPercent">0%</span>
+          <span id="progressTime">0s remaining</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div id="progressBar" class="progress-bar-fill"></div>
+        </div>
+        <div id="progressStatus" class="status-text">Starting...</div>
+      </div>
+
+      <div class="actions" id="actionButtons">
+        <button class="btn btn-primary" onclick="startScrape()">Start Extraction</button>
+        <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js?v=4"></script>
+</body>
+
 </html>

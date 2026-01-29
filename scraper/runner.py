@@ -89,25 +89,33 @@ def scrape_brand_list(generic_url, generic_name, rows):
             strength = r.get("data-strength")
             company = r.get("data-company")
             
-            # Extract detailed Pack Size from columns
-            # Column 3 (index 2) usually has Pack Size, Column 4 (index 3) has Price
-            cols = r.select("td")
+            col_data = [td.get_text(" ", strip=True) for td in r.select("td")]
+            # Expected: [Brand, Dosage, Strength, Company, PackSize+Price]
             
-            pack_size = "N/A"
+            dosage_form = col_data[1] if len(col_data) > 1 else "N/A"
+            
+            # Pack Size & Price column (Last column usually)
+            pack_price_text = col_data[-1] if col_data else ""
+            
+            # Format in image: "Unit Price: ৳ 1,000.00 (1 x 30: ৳ 30,000.00)"
+            # We want to perform smart extraction
             unit_price = r.get("data-price") or "N/A"
+            pack_size = "N/A"
             
-            # Try to find 'Pack Size' in text content of columns
-            for col in cols:
-                txt = col.get_text(" ", strip=True)
-                if "Pack Size" in txt:
-                    # Example: "Pack Size: (30's: ৳ 300.00)"
-                    pack_size = txt.replace("Pack Size:", "").strip()
-                
+            if "(" in pack_price_text and ")" in pack_price_text:
+                # Extract content inside parens as pack size info
+                try:
+                    pack_size = pack_price_text.split("(")[1].split(")")[0]
+                except:
+                    pack_size = pack_price_text
+            elif "Pack Size:" in pack_price_text:
+                 pack_size = pack_price_text.replace("Pack Size:", "").strip()
+
             rows.append({
                 "generic_name": generic_name,
                 "brand_name": b_name,
+                "dosage_form": dosage_form,
                 "strength": strength,
-                "dosage_form": "N/A", # Could interpret from name or other col
                 "company": company,
                 "pack_size": pack_size,
                 "unit_price": unit_price
@@ -164,4 +172,54 @@ def run_scraper(alphabets, limit=None):
     SCRAPE_STATUS["estimated_remaining"] = "0s"
     
     print(f"✅ Scrape Complete. Total rows: {len(rows)}")
+    return rows
+
+
+def search_generic(text):
+    """
+    Search for a generic by name. Returns list of {name, url, id}.
+    """
+    url = f"{BASE}/search?search={text}&type=generics"
+    results = []
+    
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(r.text, "lxml")
+        
+        # Search results are usually a.hoverable-block
+        for a in soup.select("a.hoverable-block"):
+            name = a.select_one(".dcind-title").text.strip() if a.select_one(".dcind-title") else a.text.strip()
+            href = a.get("href")
+            
+            # Simple validation
+            if "generics" in href:
+                full_url = urljoin(BASE, href)
+                results.append({
+                    "name": name,
+                    "url": full_url
+                })
+    except Exception as e:
+        print(f"Search error: {e}")
+        
+    return results
+
+def scrape_single_generic(url, name):
+    """
+    Scrape a specific generic URL.
+    """
+    global SCRAPE_STATUS
+    SCRAPE_STATUS["status"] = "Preparing..."
+    SCRAPE_STATUS["percent"] = 0
+    SCRAPE_STATUS["total"] = 1
+    SCRAPE_STATUS["current"] = 0
+    
+    rows = []
+    SCRAPE_STATUS["status"] = f"Scraping {name}..."
+    
+    scrape_brand_list(url, name, rows)
+    
+    SCRAPE_STATUS["current"] = 1
+    SCRAPE_STATUS["percent"] = 100
+    SCRAPE_STATUS["status"] = "Completed"
+    
     return rows
